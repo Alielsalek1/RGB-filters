@@ -248,64 +248,66 @@ void enlarge() {
 }
 
 void shuffle() {
-// This function stores quadrants in an image vector with their new given order.
+    // This function stores quadrants in an image vector with their new given order.
     cout << "New order of quarters ? 4 3 2 1\n";
     vector<int> order(4);
     for (auto &i: order)cin >> i;
 
-    vector<vector<vector<vector<unsigned char>>>>
-            img(4,vector<vector<vector<unsigned char>>>(
-                        SIZE / 2, vector<vector<unsigned char>>(
-                                SIZE / 2, vector<unsigned char>(RGB)
-                        )
-                )
-    );
+    // this is the image vector and the position vectors so we can reorder the image.
+    const int half = SIZE / 2;
+    unsigned char img[4][SIZE][SIZE][3];
+    vector<int>
+            x1{0, 0, half, half}
+    , x2{half, half, SIZE, SIZE}
+    , y1{0, half, 0, half}
+    , y2{half, SIZE, half, SIZE};
 
-//    unsigned char img[4][SIZE / 2][SIZE / 2][RGB];
-    vector<int> x1{0, 0, SIZE / 2, SIZE / 2}, x2{SIZE / 2, SIZE / 2, SIZE, SIZE}, y1{0, SIZE / 2, 0, SIZE / 2}, y2{SIZE / 2, SIZE, SIZE / 2, SIZE};
     for (int k = 0; k < 4; k++) {
         int h1, h2, v1, v2;
         switch (order[k]) {
             case 1:
-                h1 = 0, h2 = SIZE / 2, v1 = 0, v2 = SIZE / 2;
+                h1 = 0, h2 = half, v1 = 0, v2 = half;
                 break;
             case 2:
-                h1 = 0, h2 = SIZE / 2, v1 = SIZE / 2, v2 = SIZE;
+                h1 = 0, h2 = half, v1 = half, v2 = SIZE;
                 break;
             case 3:
-                h1 = SIZE / 2, h2 = SIZE, v1 = 0, v2 = SIZE / 2;
+                h1 = half, h2 = SIZE, v1 = 0, v2 = half;
                 break;
             case 4:
-                h1 = SIZE / 2, h2 = SIZE, v1 = SIZE / 2, v2 = SIZE;
+                h1 = half, h2 = SIZE, v1 = half, v2 = SIZE;
                 break;
         }
-
         // this part is where each quadrant is stored in the image vector.
-        vector<vector<vector<unsigned char>>> quadrant (SIZE / 2, vector<vector<unsigned char>>(
-                SIZE / 2, vector<unsigned char>(RGB))
-        );
+        unsigned char quadrant[half][half][3];
         int x = 0, y = 0;
         for (int i = h1; i < h2; ++i, ++x) {
             y = 0;
             for (int j = v1; j < v2; ++j, ++y) {
-                for (int a = 0; a < RGB; ++a) {
-                    quadrant[x][y][a] = image[i][j][a];
+                for (int l = 0; l < 3; l++) {
+                    quadrant[x][y][l] = image[i][j][l];
                 }
             }
         }
-        img[k] = quadrant;
+        for (int i = 0; i < half; i++) {
+            for (int j = 0; j < half; j++) {
+                for (int l = 0; l < 3; l++) {
+                    img[k][i][j][l] = quadrant[i][j][l];
+                }
+            }
+        }
     }
-
     // here we overwrite the image with the quadrants we saved.
     for (int i = 0; i < 4; i++) {
         int x = 0, y = 0;
         for (int j = x1[i]; j < x2[i]; ++j, ++x) {
             y = 0;
             for (int k = y1[i]; k < y2[i]; ++k, ++y) {
-                if (x < img[i].size() && y < img[i].size())
-                    for (int a = 0; a < RGB; ++a) {
-                        image[j][k][a] = img[i][x][y][a];
+                if (x < half && y < half) {
+                    for (int l = 0; l < 3; l++) {
+                        image[j][k][l] = img[i][x][y][l];
                     }
+                }
             }
         }
     }
