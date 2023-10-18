@@ -8,6 +8,11 @@ char imageFileName[100];
 int dx[] = {0, 0, 1, -1, 1, 1, -1, -1};
 int dy[] = {1, -1, 0, 0, 1, -1, 1, -1};
 
+enum Color {
+    BLACK = 0,
+    WHITE = 255
+};
+
 void loadImage();
 
 void saveImage();
@@ -76,15 +81,13 @@ void blackWhite() {
     //looping over RGB values for all the pixels and computing a Grayscale to measure on it
     for (int i = 0; i < SIZE; ++i) {
         for (int j = 0; j < SIZE; ++j) {
-            int sum = 0, value;
+            int sum = 0;
             for (int k = 0; k < RGB; ++k) {
                 sum += image[i][j][k];
             }
             sum /= 3;
-            if (sum > 115) value = 255;
-            else value = 0;
             for (int k = 0; k < RGB; ++k)
-                image[i][j][k] = value;
+                image[i][j][k] = sum > 115? BLACK : WHITE;
         }
     }
 }
@@ -153,7 +156,7 @@ void detectEdges() {
     then mark it as an edge*/
     for (int i = 0; i < SIZE; ++i) {
         for (int j = 0; j < SIZE; ++j) {
-            temp[i][j][0] = 255;
+            temp[i][j][0] = WHITE;
             // looping on 4 directions using direction array
             for (int k = 0; k < 4; ++k) {
                 int nx = i + dx[k], ny = j + dy[k];
@@ -201,7 +204,7 @@ void cropImage() {
             for (int k = 0; k < RGB; ++k) {
                 // if you are in range leave the image else just
                 if (i >= x && i <= x + w && j >= y && j <= y + w) continue;
-                image[i][j][k] = 255;
+                image[i][j][k] = WHITE;
             }
         }
     }
@@ -370,7 +373,7 @@ void shrink() {
     for (int i = 0; i < SIZE; ++i)
         for (int j = 0; j < SIZE; ++j)
             for (int k = 0; k < RGB; ++k)
-                image[i][j][k] = i >= newImageSize or j >= newImageSize ? 255 : newImage[i][j][k];
+                image[i][j][k] = i >= newImageSize or j >= newImageSize ? WHITE : newImage[i][j][k];
 }
 
 void blur() {
@@ -404,11 +407,121 @@ void blur() {
 
 // Skew the image horizontally by a specified degree to the right.
 void skewHorizontally() {
+    cout << "Please enter the degree to skew right: ";
+    long double degree;
+    cin >> degree;
 
+    long double pi = 3.1415926535897932384626433832795;
+
+    // Convert user-input degree to radians (rad), ensuring it's within 45 degrees.
+    long double rad = (degree > 45 ? int(degree) % 45 : degree) * pi / 180;
+
+    // Calculate the amount of whitespace added due to skew
+    int whiteSpace = SIZE * tan(rad);
+    int newImageSize = SIZE - whiteSpace;
+
+    if (degree == 45) {
+        // If the degree is 45, fill the entire image with white pixels
+        for (int i = 0; i < SIZE; ++i) {
+            for (int j = 0; j < SIZE; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                    image[i][j][k] = (i + j == 255 ? image[i][j][k] : WHITE);
+                }
+            }
+        }
+        return;
+    }
+
+    unsigned char newImage[SIZE][newImageSize][3];
+
+    // Calculate the ratio between the original image size and the skewed image size
+    double ratio = double(SIZE) / double(newImageSize);
+
+    // Copy pixels from the original image to the skewed image using the calculated ratio
+    int cnt = 0;
+    for (double j = 0; j < SIZE; j += ratio, cnt++) {
+        for (int i = 0; i < SIZE and cnt < newImageSize; ++i) {
+            for (int k = 0; k < 3; k++) {
+                newImage[i][cnt][k] = image[i][int(j)][k];
+            }
+        }
+    }
+
+    // Adjust the skewed image by filling empty spaces with white pixels.
+    for (int i = 0; i < SIZE; i++) {
+        int empty = (SIZE - i) * tan(rad);
+        int count = 0;
+        for (int j = 0; j < SIZE; j++) {
+            if (j < empty) {
+                for (int k = 0; k < 3; k++) image[i][j][k] = WHITE;
+            }
+            else if (count < newImageSize) {
+                for (int k = 0; k < 3; k++)  image[i][j][k] = newImage[i][count][k];
+                count++;
+            }
+            else {
+                for (int k = 0; k < 3; k++) image[i][j][k] = WHITE;
+            }
+        }
+    }
 }
 
 void skewVertically() {
+    cout << "Please enter the degree to skew up: ";
+    long double degree;
+    cin >> degree;
 
+    long double pi = 3.1415926535897932384626433832795;
+
+    // Convert user-input degree to radians (rad), ensuring it's within 45 degrees.
+    long double rad = (degree > 45 ? int(degree) % 45 : degree) * pi / 180;
+
+    // Calculate the amount of whitespace added due to skew
+    int whiteSpace = SIZE * tan(rad);
+    int newImageSize = SIZE - whiteSpace;
+
+    if (degree == 45) {
+        // If the degree is 45, fill the diagonal with the centered pixel
+        for (int i = 0; i < SIZE; ++i) {
+            for (int j = 0; j < SIZE; ++j) {
+                for (int k = 0; k < 3; ++k) {
+                    image[j][i][k] = (i + j == 255 ? image[j][i][k] : WHITE);
+                }
+            }
+        }
+        return;
+    }
+
+    unsigned char newImage[newImageSize][SIZE][3];
+
+    // Calculate the ratio between the original image size and the skewed image size
+    double ratio = double(SIZE) / double(newImageSize);
+
+    // Copy pixels from the original image to the skewed image using the calculated ratio
+    int cnt = 0;
+    for (double i = 0; i < SIZE; i += ratio, cnt++) {
+        for (int j = 0; j < SIZE and cnt < newImageSize; j++) {
+            for (int k = 0; k < 3; ++k) {
+                newImage[cnt][j][k] = image[int(i)][j][k];
+            }
+        }
+    }
+
+    // Adjust the skewed image by filling empty spaces with white pixels.
+    for (int i = 0; i < SIZE; i++) {
+        int empty = (SIZE - i) * tan(rad);
+        int count = 0;
+        for (int j = 0; j < SIZE; j++) {
+            for (int k = 0; k < 3; ++k) {
+                if (j < empty) image[j][i][k] = WHITE;
+                else if (count < newImageSize) {
+                    image[j][i][k] = newImage[count][i][k];
+                    count += k == 2;
+                }
+                else image[j][i][k] = WHITE;
+            }
+        }
+    }
 }
 
 //--------------------------------------------
